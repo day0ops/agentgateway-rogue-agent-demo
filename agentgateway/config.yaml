@@ -1,0 +1,72 @@
+# yaml-language-server: $schema=https://agentgateway.dev/schema/config
+#
+# agentgateway runs as a Pod, so baseUrl below points at mock-llm-server's
+# in-cluster Service DNS name, not a host.docker.internal address.
+config:
+  adminAddr: 0.0.0.0:15000
+  readinessAddr: 0.0.0.0:19001
+  statsAddr: 0.0.0.0:19002
+  database:
+    url: "sqlite:///data/agentgateway.db"
+
+llm:
+  port: 4000
+  policies:
+    apiKey:
+      mode: strict
+      location:
+        header: { name: x-api-key }
+      keys:
+        - key: sk-rogue-agent-demo
+          metadata: { name: rogue-agent }
+          budgets: []
+          allowedModels: [mock-model]
+        - key: sk-normal-user-demo
+          metadata: { name: normal-user }
+          budgets: []
+        # Backdated history replays under its own identity rather than
+        # rogue-agent's, since it uses a different set of models than the
+        # live demo ever does.
+        - key: sk-history-seeder-demo
+          metadata: { name: history-seeder }
+          budgets: []
+          allowedModels: [gpt-4o-mini, gpt-4o, claude-sonnet-5, claude-haiku-4-5]
+  providers:
+    - name: openai-mock
+      provider: openai
+      params:
+        apiKey: sk-mock-unused
+        baseUrl: http://mock-llm-server:8787/v1
+    - name: anthropic-mock
+      provider: anthropic
+      params:
+        apiKey: sk-mock-unused
+        baseUrl: http://mock-llm-server:8787/v1
+  # mock-model is the Rogue Agent's own model, on the generic "custom"
+  # provider type. The rest are history-seeder's background traffic, each
+  # referencing one of the providers above.
+  models:
+    - name: mock-model
+      provider:
+        custom:
+          formats:
+            - type: completions
+      params:
+        baseUrl: http://mock-llm-server:8787/v1
+        model: mock-model
+    - name: gpt-4o-mini
+      provider: { reference: openai-mock }
+      params:
+        model: gpt-4o-mini
+    - name: gpt-4o
+      provider: { reference: openai-mock }
+      params:
+        model: gpt-4o
+    - name: claude-sonnet-5
+      provider: { reference: anthropic-mock }
+      params:
+        model: claude-sonnet-5
+    - name: claude-haiku-4-5
+      provider: { reference: anthropic-mock }
+      params:
+        model: claude-haiku-4-5

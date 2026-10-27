@@ -1,0 +1,418 @@
+:root {
+  /* Brand seed: oklch(0.817 0.161 75.1) honey/amber - calm amber at rest,
+     escalating through orange to a hot red as the agent spirals, resolving
+     to a cold blue once governed. */
+  --primary: oklch(0.76 0.16 72);
+  --primary-ink: oklch(0.12 0.02 72);
+  --warning: oklch(0.68 0.19 50);
+  --danger: oklch(0.58 0.22 25);
+  --blocked: oklch(0.64 0.13 230);
+  /* Only used for syntax-highlighted string literals in the code listing -
+     a conventional editor-theme green, distinct from the amber/red/blue
+     escalation palette used everywhere else. */
+  --code-string: oklch(0.6 0.15 145);
+
+  --bg: oklch(0.07 0 0);
+  --surface: oklch(0.12 0 0);
+  --border: oklch(0.24 0 0);
+  --ink: oklch(0.88 0 0);
+  --muted: oklch(0.55 0 0);
+
+  --font-mono:
+    "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  /* The "desktop" behind the floating window(s) - darker than the panels
+     themselves so they read as windows, not the whole page. */
+  background: oklch(0.03 0 0);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-lg);
+  -webkit-font-smoothing: antialiased;
+}
+
+.stage {
+  width: min(900px, 100%);
+}
+
+/* Scene 1: the code, and the decision to ship it */
+
+.stage[data-scene="code"] .terminal {
+  display: none;
+}
+
+.stage[data-scene="terminal"] .code-panel {
+  display: none;
+}
+
+.code-panel {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  box-shadow: 0 40px 80px -20px oklch(0 0 0 / 0.6);
+}
+
+.commit-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-sm);
+  font-size: 0.82rem;
+  margin-bottom: var(--space-md);
+}
+
+.commit-hash {
+  flex-shrink: 0;
+  padding: 2px var(--space-sm);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--muted);
+}
+
+.commit-message {
+  flex: 1;
+  min-width: 200px;
+  color: var(--ink);
+}
+
+.commit-author {
+  flex-shrink: 0;
+  color: var(--muted);
+}
+
+.code-listing {
+  margin: 0 0 var(--space-lg);
+  padding: var(--space-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  line-height: 1.6;
+  max-height: 420px;
+  overflow: auto;
+}
+
+.code-line {
+  display: block;
+  padding-inline: var(--space-sm);
+  white-space: pre;
+  color: var(--ink);
+}
+
+.code-line-changed {
+  position: relative;
+  background: color-mix(in oklch, var(--warning) 16%, transparent);
+}
+
+.code-line-changed::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--warning);
+}
+
+.tok-comment {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.tok-keyword {
+  color: var(--primary);
+}
+
+.tok-string {
+  color: var(--code-string);
+}
+
+.run-button {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 10px var(--space-lg);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  border: 1px solid color-mix(in oklch, var(--primary) 45%, var(--border));
+  background: color-mix(in oklch, var(--primary) 14%, var(--surface));
+  color: var(--primary);
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    transform 150ms var(--ease-out-expo);
+}
+
+.run-button:hover {
+  background: color-mix(in oklch, var(--primary) 22%, var(--surface));
+  border-color: var(--primary);
+}
+
+.run-button:active {
+  transform: scale(0.98);
+}
+
+.run-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.run-note {
+  margin-top: var(--space-md);
+  font-size: 0.8rem;
+  line-height: 1.7;
+  color: var(--muted);
+  min-height: 1.4em;
+}
+
+@keyframes code-panel-slide-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-40px);
+  }
+}
+
+.code-panel.sliding-out {
+  animation: code-panel-slide-out 320ms var(--ease-out-expo) forwards;
+}
+
+/* Scene 2: the terminal - opened deliberately, not shown automatically */
+
+.terminal {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: 0 40px 80px -20px oklch(0 0 0 / 0.6);
+}
+
+.stage[data-scene="terminal"] .terminal {
+  animation: terminal-slide-in 420ms var(--ease-out-expo);
+}
+
+@keyframes terminal-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.terminal-titlebar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.terminal-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.terminal-dot-red {
+  background: oklch(0.62 0.19 25);
+}
+
+.terminal-dot-yellow {
+  background: oklch(0.78 0.15 85);
+}
+
+.terminal-dot-green {
+  background: oklch(0.72 0.17 145);
+}
+
+.terminal-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.78rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.terminal-body {
+  padding: var(--space-md) var(--space-lg);
+  /* height is driven by JS (growTerminalBody in app.js): a single transition
+     from a small starting height up to this same max-height ceiling, fired
+     once when logging starts - not re-targeted per line, since lines can
+     arrive faster than any transition could keep up with. CSS alone can't
+     animate to/from an auto-sized height, hence the explicit px dance. */
+  max-height: 60vh;
+  overflow-y: auto;
+  line-height: 1.6;
+  font-size: 0.86rem;
+  scroll-behavior: smooth;
+  transition: height 1100ms var(--ease-out-expo);
+}
+
+.term-line {
+  white-space: pre-wrap;
+  word-break: break-word;
+  min-height: 1.6em;
+}
+
+.term-prompt {
+  color: var(--primary);
+  margin-right: var(--space-sm);
+}
+
+.term-log {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.term-log li {
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--ink);
+  animation: term-line-in 120ms linear;
+}
+
+@keyframes term-line-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.term-log li .ts {
+  color: var(--muted);
+}
+
+.term-log li[data-level="error"] {
+  color: var(--danger);
+}
+
+.term-log li[data-level="blocked"] {
+  color: var(--blocked);
+}
+
+.term-cursor-line {
+  display: flex;
+  align-items: center;
+}
+
+.term-cursor {
+  display: inline-block;
+  width: 8px;
+  height: 1em;
+  background: var(--ink);
+  animation: term-blink 1s steps(1) infinite;
+}
+
+@keyframes term-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.terminal-actions {
+  display: flex;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-lg);
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.kill-button {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  padding: 6px var(--space-md);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--ink);
+  transition:
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.kill-button:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.terminal-statusline {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: 5px var(--space-lg);
+  background: var(--primary);
+  color: var(--primary-ink);
+  font-size: 0.74rem;
+  font-weight: 600;
+  transition: background 200ms ease;
+}
+
+.statusline-spacer {
+  flex: 1;
+}
+
+body[data-escalation="blocked"] .terminal-statusline {
+  background: var(--danger);
+  color: white;
+}
+
+/* Reduced motion */
+
+@media (prefers-reduced-motion: reduce) {
+  .term-log li,
+  .term-cursor,
+  .terminal,
+  .terminal-body,
+  .code-panel {
+    animation: none !important;
+    transition-duration: 1ms !important;
+  }
+}

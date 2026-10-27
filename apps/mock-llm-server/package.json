@@ -1,0 +1,10 @@
+{
+  "name": "mock-llm-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "bun server.js",
+    "test": "bun test"
+  }
+}

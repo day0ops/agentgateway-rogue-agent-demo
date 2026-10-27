@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>akshay@home-office: ~/agent</title>
+    <meta
+      name="description"
+      content="Internal task runner for the Acme fulfillment agent."
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+    />
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <div class="stage" id="stage" data-scene="code">
+      <section class="code-panel" id="code-panel">
+        <div class="commit-meta">
+          <span class="commit-hash">a3f29c1</span>
+          <span class="commit-message">
+            fix: agent should keep retrying until the task actually succeeds
+          </span>
+          <span class="commit-author">akshay</span>
+        </div>
+        <pre
+          class="code-listing"
+        ><code><span class="code-line"><span class="tok-comment">// agent.js — Acme fulfillment agent task runner</span></span><span class="code-line"><span class="tok-keyword">import</span> { createClient } <span class="tok-keyword">from</span> <span class="tok-string">"./llm-client.js"</span>;</span><span class="code-line"><span class="tok-keyword">import</span> { TASK_QUEUE } <span class="tok-keyword">from</span> <span class="tok-string">"./tasks.js"</span>;</span><span class="code-line"><span class="tok-keyword">const</span> MODEL = <span class="tok-string">"fulfillment-agent-v2"</span>;</span><span class="code-line"><span class="tok-keyword">const</span> llm = createClient({ model: MODEL });</span><span class="code-line"><span class="tok-keyword">let</span> attempts = 0;</span><span class="code-line"><span class="tok-keyword">async</span> <span class="tok-keyword">function</span> callAgent(task) {</span><span class="code-line">  attempts += 1;</span><span class="code-line">  <span class="tok-keyword">const</span> response = <span class="tok-keyword">await</span> llm.chat({</span><span class="code-line">    messages: [{ role: <span class="tok-string">"user"</span>, content: task }],</span><span class="code-line">  });</span><span class="code-line">  <span class="tok-keyword">return</span> {</span><span class="code-line">    done: response.finish_reason === <span class="tok-string">"stop"</span>,</span><span class="code-line">    summary: response.content,</span><span class="code-line">  };</span><span class="code-line">}</span><span class="code-line"><span class="tok-keyword">async</span> <span class="tok-keyword">function</span> runTask(task) {</span><span class="code-line">  <span class="tok-keyword">let</span> result = <span class="tok-keyword">await</span> callAgent(task);</span><span class="code-line"><span class="tok-comment">  // fix: agent should keep retrying until the task actually succeeds</span></span><span class="code-line code-line-changed">  <span class="tok-keyword">while</span> (!result.done) {</span><span class="code-line">    result = <span class="tok-keyword">await</span> callAgent(task);</span><span class="code-line">  }</span><span class="code-line">  <span class="tok-keyword">return</span> result;</span><span class="code-line">}</span><span class="code-line"><span class="tok-keyword">async</span> <span class="tok-keyword">function</span> main() {</span><span class="code-line">  console.log(<span class="tok-string">`fulfillment-agent starting up (model: ${MODEL})`</span>);</span><span class="code-line">  <span class="tok-keyword">for</span> (<span class="tok-keyword">const</span> task <span class="tok-keyword">of</span> TASK_QUEUE) {</span><span class="code-line">    console.log(<span class="tok-string">`picking up task: ${task}`</span>);</span><span class="code-line">    <span class="tok-keyword">const</span> result = <span class="tok-keyword">await</span> runTask(task);</span><span class="code-line">    console.log(<span class="tok-string">`task complete after ${attempts} attempt(s): ${result.summary}`</span>);</span><span class="code-line">    attempts = 0;</span><span class="code-line">  }</span><span class="code-line">  console.log(<span class="tok-string">"queue drained, idling for new work"</span>);</span><span class="code-line">}</span><span class="code-line">main().catch((err) => {</span><span class="code-line">  console.error(<span class="tok-string">"fatal error in agent loop:"</span>, err);</span><span class="code-line">  process.exit(1);</span><span class="code-line">});</span></code></pre>
+
+        <button class="run-button" id="run-button" type="button">
+          Run locally
+        </button>
+        <div class="run-note" id="run-note" aria-live="polite"></div>
+      </section>
+
+      <div class="terminal" id="terminal">
+        <div class="terminal-titlebar">
+          <span class="terminal-dot terminal-dot-red"></span>
+          <span class="terminal-dot terminal-dot-yellow"></span>
+          <span class="terminal-dot terminal-dot-green"></span>
+          <span class="terminal-title"
+            >akshay@home-office: ~/agent</span
+          >
+        </div>
+
+        <div class="terminal-body" id="terminal-body">
+          <ul class="term-log" id="term-log" role="log"></ul>
+
+          <div class="term-cursor-line">
+            <span class="term-cursor" aria-hidden="true"></span>
+          </div>
+        </div>
+
+        <div class="terminal-actions">
+          <button class="kill-button" id="kill-button" type="button">
+            Kill process
+          </button>
+        </div>
+
+        <div class="terminal-statusline">
+          <span>requests <strong id="stat-requests">0</strong></span>
+          <span>tokens <strong id="stat-tokens">0</strong></span>
+          <span>rate <strong id="stat-rate">0.0</strong>/s</span>
+          <span class="statusline-spacer"></span>
+          <span id="statusline-mode">mode: direct</span>
+          <span class="statusline-status" id="statusline-status">idle</span>
+        </div>
+      </div>
+    </div>
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>

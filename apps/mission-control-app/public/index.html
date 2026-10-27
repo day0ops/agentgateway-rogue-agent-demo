@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mission Control</title>
+    <meta
+      name="description"
+      content="Rob's console for reining in agent spend."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      rel="stylesheet"
+      href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&display=swap"
+    />
+    <link rel="stylesheet" href="/style.css" />
+    <script>
+      (function () {
+        var saved = localStorage.getItem("mission-control-theme");
+        var dark =
+          saved === "dark" ||
+          (!saved && matchMedia("(prefers-color-scheme: dark)").matches);
+        document.documentElement.dataset.theme = dark ? "dark" : "light";
+      })();
+    </script>
+  </head>
+  <body>
+    <div class="shell">
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <span class="brand-name">Mission Control</span>
+        </div>
+        <div class="topbar-actions">
+          <button
+            class="theme-toggle"
+            id="theme-toggle"
+            type="button"
+            aria-label="Toggle dark mode"
+          >
+            <svg
+              class="icon-sun"
+              viewBox="0 0 24 24"
+              fill="none"
+              aria-hidden="true"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="4"
+                stroke="currentColor"
+                stroke-width="1.6"
+              />
+              <path
+                d="M12 3v2m0 14v2m9-9h-2M5 12H3m14.65-6.65-1.4 1.4M6.75 17.25l-1.4 1.4m0-11.3 1.4 1.4m10.5 10.5 1.4 1.4"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+              />
+            </svg>
+            <svg
+              class="icon-moon"
+              viewBox="0 0 24 24"
+              fill="none"
+              aria-hidden="true"
+            >
+              <path
+                d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+          <button class="role-tag" id="role-tag" type="button">
+            Rob · CFO
+          </button>
+        </div>
+      </header>
+
+      <main class="stage">
+        <ol class="beats" id="beats">
+          <li class="beat" data-beat="1" aria-current="step">
+            <div class="beat-marker" aria-hidden="true">1</div>
+            <div class="beat-body">
+              <h2 class="beat-title">
+                Your agent is calling the model directly
+              </h2>
+              <p class="beat-copy">
+                No visibility, no limits. Route it through agentgateway to
+                create a control point.
+              </p>
+              <div class="diagram" id="diagram" data-state="direct">
+                <span class="dnode d-agent">Agent</span>
+                <span class="dline" id="dline-1">
+                  <span class="dpulse"></span>
+                </span>
+                <span class="dnode d-gateway" id="dnode-gateway">
+                  <img class="dnode-icon" src="/agentgateway-mark.svg" alt="" />
+                  agentgateway
+                </span>
+                <span class="dline" id="dline-2">
+                  <span class="dpulse"></span>
+                </span>
+                <span class="dnode d-llm">LLM</span>
+              </div>
+              <button class="primary-button" id="route-button" type="button">
+                Route through agentgateway
+              </button>
+            </div>
+          </li>
+
+          <li class="beat" data-beat="2">
+            <div class="beat-marker" aria-hidden="true">2</div>
+            <div class="beat-body">
+              <h2 class="beat-title">A budget policy keeps it in check</h2>
+              <p class="beat-copy">
+                Every agent gets its own key. Attach a budget to the key and
+                agentgateway enforces it on every request, blocking the moment
+                it's exceeded.
+              </p>
+              <button class="primary-button" id="budget-button" type="button">
+                Apply budget policy
+              </button>
+            </div>
+          </li>
+
+          <li class="beat" data-beat="3">
+            <div class="beat-marker" aria-hidden="true">3</div>
+            <div class="beat-body">
+              <h2 class="beat-title">See it live</h2>
+              <p class="beat-copy">
+                Open agentgateway's dashboard to watch the block happen in real
+                time.
+              </p>
+              <a
+                class="primary-button"
+                id="dashboard-link"
+                href="#"
+                target="_blank"
+                rel="noopener"
+              >
+                Open agentgateway dashboard
+              </a>
+            </div>
+          </li>
+        </ol>
+      </main>
+
+      <div class="operator-panel" id="operator-panel" inert>
+        <p class="operator-heading">Operator controls</p>
+        <button class="operator-button" id="reset-button" type="button">
+          Reset demo
+        </button>
+        <button class="operator-button" id="costs-button" type="button">
+          Set up cost catalog
+        </button>
+        <button class="operator-button" id="seed-history-button" type="button">
+          Seed a week of history
+        </button>
+        <button class="operator-button" id="seed-button" type="button">
+          Seed normal traffic
+        </button>
+        <p class="operator-status" id="operator-status" role="status"></p>
+      </div>
+    </div>
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>

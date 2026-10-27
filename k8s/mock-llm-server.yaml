@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mock-llm-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mock-llm-server
+  template:
+    metadata:
+      labels:
+        app: mock-llm-server
+    spec:
+      containers:
+        - name: mock-llm-server
+          image: localhost/mock-llm-server:local
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8787
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mock-llm-server
+spec:
+  selector:
+    app: mock-llm-server
+  ports:
+    - port: 8787
+      targetPort: 8787

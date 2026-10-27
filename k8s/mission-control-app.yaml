@@ -1,0 +1,92 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mission-control-app
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: mission-control-app
+rules:
+  # 'patch' is what `kubectl rollout restart` needs; the rest back its status poll.
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    resourceNames: ["agentgateway"]
+    verbs: ["get", "list", "watch", "patch"]
+  - apiGroups: ["apps"]
+    resources: ["replicasets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  # Lets the "open agentgateway UI" link resolve the Service's real
+  # LoadBalancer IP instead of a hardcoded localhost.
+  - apiGroups: [""]
+    resources: ["services"]
+    resourceNames: ["agentgateway"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: mission-control-app
+subjects:
+  - kind: ServiceAccount
+    name: mission-control-app
+roleRef:
+  kind: Role
+  name: mission-control-app
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mission-control-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mission-control-app
+  template:
+    metadata:
+      labels:
+        app: mission-control-app
+    spec:
+      serviceAccountName: mission-control-app
+      containers:
+        - name: mission-control-app
+          image: localhost/mission-control-app:local
+          imagePullPolicy: Never
+          env:
+            - name: K8S_NAMESPACE
+              value: default
+            - name: K8S_AGENTGATEWAY_DEPLOYMENT
+              value: agentgateway
+            - name: ROGUE_AGENT_URL
+              value: http://rogue-agent-app:5173
+            - name: GATEWAY_LLM_URL
+              value: http://agentgateway:4000/v1/chat/completions
+            - name: HISTORY_SEEDER_URL
+              value: http://agentgateway:5176
+            # Only builds the "open agentgateway UI" link; the browser always
+            # reaches it via `kubectl port-forward` to localhost.
+            - name: GATEWAY_ADMIN_URL
+              value: http://localhost:15000
+            # Actual admin API calls (apply-budget) need the real Service
+            # address - the pod's own localhost doesn't serve anything.
+            - name: GATEWAY_ADMIN_API_URL
+              value: http://agentgateway:15000
+          ports:
+            - containerPort: 5174
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mission-control-app
+spec:
+  type: LoadBalancer
+  selector:
+    app: mission-control-app
+  ports:
+    - port: 5174
+      targetPort: 5174

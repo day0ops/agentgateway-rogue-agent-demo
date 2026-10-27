@@ -1,0 +1,96 @@
+# agentgateway-config ConfigMap isn't defined here - scripts/k8s-deploy.sh
+# generates it from agentgateway/config.yaml to avoid duplicating the YAML.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agentgateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: agentgateway
+  template:
+    metadata:
+      labels:
+        app: agentgateway
+    spec:
+      # ConfigMap volumes mount read-only, but live budget edits need to write
+      # config.yaml back. This seeds a writable emptyDir from the ConfigMap.
+      initContainers:
+        - name: seed-config
+          image: busybox:latest
+          # chmod: agentgateway runs as non-root, the copy is root-owned.
+          command:
+            [
+              "sh",
+              "-c",
+              "cp /config-readonly/config.yaml /config/config.yaml && chmod 666 /config/config.yaml",
+            ]
+          volumeMounts:
+            - name: config-readonly
+              mountPath: /config-readonly
+            - name: config
+              mountPath: /config
+      containers:
+        - name: agentgateway
+          image: ghcr.io/agentgateway/agentgateway:v1.6.0
+          args: ["-f", "/config/config.yaml"]
+          ports:
+            - containerPort: 4000
+            - containerPort: 15000
+            - containerPort: 19001
+            - containerPort: 19002
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: data
+              mountPath: /data
+        # Shares agentgateway's own data volume, same pod - no cross-process
+        # file-locking boundary to worry about.
+        - name: history-seeder
+          image: localhost/history-seeder:local
+          imagePullPolicy: Never
+          env:
+            - name: MOCK_LLM_URL
+              value: http://mock-llm-server:8787
+          ports:
+            - containerPort: 5176
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: config-readonly
+          configMap:
+            name: agentgateway-config
+        - name: config
+          emptyDir: {}
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: agentgateway
+spec:
+  # LoadBalancer, not ClusterIP: lok8s ships MetalLB, so this gets a real
+  # external IP, no port-forward needed. On kind (no MetalLB) this stays
+  # pending forever - scripts/k8s-forward.sh is the fallback.
+  type: LoadBalancer
+  selector:
+    app: agentgateway
+  ports:
+    - name: llm
+      port: 4000
+      targetPort: 4000
+    - name: admin
+      port: 15000
+      targetPort: 15000
+    - name: readiness
+      port: 19001
+      targetPort: 19001
+    - name: stats
+      port: 19002
+      targetPort: 19002
+    - name: history-seeder
+      port: 5176
+      targetPort: 5176
