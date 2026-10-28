@@ -9,6 +9,8 @@ The premise: A developer built an AI agent which has nasty bug leaking tokens; t
 
 Runs entirely on a local Kubernetes cluster, such [lok8s](https://github.com/day0ops/lok8s) or plain [kind](https://kind.sigs.k8s.io).
 
+Presentation slides can be found [here](./Cloud-Native-AI-Summit-APAC.pptx).
+
 ## The story
 
 1. The colleague's "Acme Agent" app calls a mock LLM **directly** - no gateway, no limits.
