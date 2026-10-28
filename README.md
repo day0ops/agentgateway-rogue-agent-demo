@@ -42,7 +42,8 @@ Runs entirely on a local Kubernetes cluster, such [lok8s](https://github.com/day
 Everything is wrapped by the `Makefile`. Run `make help` for the full list.
 
 ```bash
-make up-lok8s   # or: make up-kind
+make up-kind   # or: make up-lok8s
+make forward
 ```
 
 Either creates the cluster (if needed), builds all four images, loads them in, and deploys the stack. The three user-facing Services are `type: LoadBalancer`:
